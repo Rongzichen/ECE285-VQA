@@ -94,7 +94,7 @@ def main():
 					input_tensors['sentence']:sentence,
 					input_tensors['answer']:answer
 				}
-			)
+			)  ### The whole part just store all the parameters into tensorflow inner class! ###
 			batch_no += 1
 			if args.debug:
 				for idx, p in enumerate(pred):
