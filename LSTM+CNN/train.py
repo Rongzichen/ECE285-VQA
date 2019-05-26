@@ -73,9 +73,10 @@ def main():
 	model = vis_lstm_model.Vis_lstm_model(model_options)# 初始化TensorFlow
 	input_tensors, t_loss, t_accuracy, t_p = model.build_model() # Get the results of the Neural Network Model(LSTM)
 	train_op = tf.train.AdamOptimizer(args.learning_rate).minimize(t_loss) # Use Adam to get better learning rate
-	sess = tf.InteractiveSession() 
+	sess = tf.InteractiveSession() # Get into the interactive session, I think here just open a window or sth to display sth.
 	tf.initialize_all_variables().run()
 
+	# I think here is the interrupt processing. if resume from previous process, resume with previous process results.
 	saver = tf.train.Saver()
 	if args.resume_model:
 		saver.restore(sess, args.resume_model)
@@ -83,7 +84,9 @@ def main():
 	for i in range(args.epochs):
 		batch_no = 0
 
-		while (batch_no*args.batch_size) < len(qa_data['training']):
+		while (batch_no*args.batch_size) < len(qa_data['training']): # batch_no*args.batch_size = the total number of elements 
+			#in training set that has been explored.
+			#Get the batch of the training set.
 			sentence, answer, fc7 = get_training_batch(batch_no, args.batch_size, fc7_features, image_id_map, qa_data, 'train')
 			_, loss_value, accuracy, pred = sess.run([train_op, t_loss, t_accuracy, t_p], 
 				feed_dict={
@@ -109,13 +112,15 @@ def main():
 def get_training_batch(batch_no, batch_size, fc7_features, image_id_map, qa_data, split):
 	qa = None
 	if split == 'train':
-		qa = qa_data['training']
+		qa = qa_data['training'] # qa_data is a large dictionary, has 'training','validation','answer_vocab','question_vocab',
+					 # and 'max_question_length'.
 	else:
 		qa = qa_data['validation']
 
-	si = (batch_no * batch_size)%len(qa)
-	ei = min(len(qa), si + batch_size)
-	n = ei - si
+	si = (batch_no * batch_size)%len(qa) # Not sure exactly what's doing here, but it seems this is start element of batch i.
+	ei = min(len(qa), si + batch_size) # end of the element in batch i.
+	n = ei - si  # Total number of batch i
+	
 	sentence = np.ndarray( (n, qa_data['max_question_length']), dtype = 'int32')
 	answer = np.zeros( (n, len(qa_data['answer_vocab'])))
 	fc7 = np.ndarray( (n,4096) )
@@ -126,7 +131,7 @@ def get_training_batch(batch_no, batch_size, fc7_features, image_id_map, qa_data
 		answer[count, qa[i]['answer']] = 1.0
 		fc7_index = image_id_map[ qa[i]['image_id'] ]
 		fc7[count,:] = fc7_features[fc7_index][:]
-		count += 1
+		count += 1	
 	
 	return sentence, answer, fc7
 
