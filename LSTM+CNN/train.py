@@ -5,7 +5,8 @@ import argparse
 import numpy as np
 
 def main():
-	parser = argparse.ArgumentParser()
+	parser = argparse.ArgumentParser()  # argparse 是 Python 内置的一个用于命令项选项与参数解析的模块，\
+					    # 通过在程序中定义好我们需要的参数，argparse 将会从 sys.argv 中解析出这些参数，并自动生成帮助和使用信息
 	parser.add_argument('--num_lstm_layers', type=int, default=2,
                        help='num_lstm_layers')
 	parser.add_argument('--fc7_feature_length', type=int, default=4096,
@@ -33,21 +34,28 @@ def main():
 	parser.add_argument('--version', type=int, default=2,
                        help='VQA data version')
 
-	args = parser.parse_args()
-	print("Reading QA DATA")
+	args = parser.parse_args() # Get the two attributes, integers and accumulate.
+	print("Reading QA DATA") 
+	#存了些什么样子的数据？函数返回的数据结构啥样子= qa_data的结构啥样子。
 	qa_data = data_loader.load_questions_answers(args.version, args.data_dir)
 	
 	print("Reading fc7 features")
+	
+	#下面data_loader提取到的就是feature和id，但是dataloader应该还没有经过training，如何得到的？
+	#data_loader的到的image_id_list是什么样子的？
 	fc7_features, image_id_list = data_loader.load_fc7_features(args.data_dir, 'train')
 	print("FC7 features", fc7_features.shape)
 	print("image_id_list", image_id_list.shape)
 
-	image_id_map = {}
+	image_id_map = {}  #得到的是image_id名字对应的id数字；数据类型为字典 
 	for i in range(len(image_id_list)):
 		image_id_map[ image_id_list[i] ] = i
-
+	
+	# 为啥需要一个ans_map这样的字典？
+	# 这里面的ans是什么东西，以及qa_data['answer_vocab'][ans]的数据结构为何会是这样？
 	ans_map = { qa_data['answer_vocab'][ans] : ans for ans in qa_data['answer_vocab']}
-
+	
+	#下面这个是配置好TensorFlow初始化的参数。
 	model_options = {
 		'num_lstm_layers' : args.num_lstm_layers,
 		'rnn_size' : args.rnn_size,
@@ -61,11 +69,11 @@ def main():
 	}
 	
 	
-	
-	model = vis_lstm_model.Vis_lstm_model(model_options)
-	input_tensors, t_loss, t_accuracy, t_p = model.build_model()
-	train_op = tf.train.AdamOptimizer(args.learning_rate).minimize(t_loss)
-	sess = tf.InteractiveSession()
+	#下面这里几句话对TensorFLow进行了初始化与调用。
+	model = vis_lstm_model.Vis_lstm_model(model_options)# 初始化TensorFlow
+	input_tensors, t_loss, t_accuracy, t_p = model.build_model() # Get the results of the Neural Network Model(LSTM)
+	train_op = tf.train.AdamOptimizer(args.learning_rate).minimize(t_loss) # Use Adam to get better learning rate
+	sess = tf.InteractiveSession() 
 	tf.initialize_all_variables().run()
 
 	saver = tf.train.Saver()
